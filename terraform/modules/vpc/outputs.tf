@@ -1,11 +1,11 @@
 output "vpc_id" {
-  value = aws_vpc.beanstalk_vpc.id
+  value = aws_vpc.basic_vpc.id
 }
 
-output "public_subnets" {
-  value = aws_subnet.public_subnets[*].id
+output "subnet_a_id" {
+  value = aws_subnet.public_a.id
 }
 
-output "private_subnets" {
-  value = aws_subnet.private_subnets[*].id
+output "subnet_b_id" {
+  value = aws_subnet.public_b.id
 }
