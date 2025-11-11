@@ -33,18 +33,20 @@ module "vpc" {
 
 module "target_group_a" {
     source = "../../modules/target_groups"
+    container_port = var.container_port
     vpc_id = module.vpc.vpc_id
     target_group_name = var.target_group_name_a
 }
 
 module "target_group_b" {
     source = "../../modules/target_groups"
+    container_port = var.container_port
     vpc_id = module.vpc.vpc_id
     target_group_name = var.target_group_name_b
 }
 
 ###########################################################
-# ALB Modules
+# ALB Module
 ###########################################################
 
 module "alb" {
@@ -56,6 +58,40 @@ module "alb" {
     subnet_b_id = module.vpc.subnet_b_id
     tg_a = module.target_group_a.target_group_arn
     tg_b = module.target_group_b.target_group_arn
+}
+
+###########################################################
+# IAM ECS Module
+###########################################################
+
+module "iam_ecs" {
+    source = "../../modules/iam_ecs"
+}
+
+###########################################################
+# IAM ECS service role Module
+###########################################################
+
+module "iam_ecs_servicerole" {
+    source = "../../modules/iam_ecs_servicerole"
+}
+
+###########################################################
+# ECS Cluster Module
+###########################################################
+
+module "ecs_cluster" {
+    source = "../../modules/ecs"
+    cluster_name = var.cluster_name
+    compute_type_ecs = var.compute_type_ecs
+    iam_ecs_task = module.iam_ecs.iam_ecs_arn
+    sg_id = module.alb.sg_id
+    subnet_a_id = module.vpc.subnet_a_id
+    subnet_b_id = module.vpc.subnet_b_id
+    listener_80_arn = module.target_group_a.target_group_arn
+    container_name = var.container_name
+    container_port = var.container_port
+    ecs_service_role = module.iam_ecs_servicerole.ecsservicerole_arn
 }
 
 ############################################################

@@ -80,6 +80,30 @@ variable "environment" {
 }
 
 ###########################################################
+# ECS Cluster Variables
+###########################################################
+
+variable "cluster_name" {
+    description = "Nombre del cluster"
+    type = string
+}
+
+variable "compute_type_ecs" {
+    description = "Tipo de computación del cluster"
+    type = string
+}
+
+variable "container_name" {
+    description = "Nombre del contenedor"
+    type = string
+}
+
+variable "container_port" {
+    description = "Puerto del contenedor"
+    type = number
+}
+
+###########################################################
 # CodeBuild Variables
 ###########################################################
 

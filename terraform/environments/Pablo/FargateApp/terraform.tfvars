@@ -25,6 +25,13 @@ target_group_name_b = "target-group-2"
 name_security_group = "alb-sg"
 name_lb = "simplealb"
 ###########################################################
+# ECS Cluster Variables
+###########################################################
+cluster_name = "fargatecluster"
+compute_type_ecs = "FARGATE"
+container_name = "appcontainer"
+container_port = 8000
+###########################################################
 # S3 Variables
 ###########################################################
 environment = "prod"
