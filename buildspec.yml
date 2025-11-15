@@ -73,8 +73,8 @@ phases:
               "name": "$CONTAINER_NAME",
               "image": "$ECR_REPO_URI:$IMAGE_TAG",
               "essential": true,
-              "cpu": 10,
-              "memory": 256,
+              "cpu": 1024,
+              "memory": 2048,
               "portMappings": [
                 {
                   "containerPort": 8000,
@@ -108,6 +108,13 @@ phases:
                   "awslogs-stream-prefix": "ecs",
                   "awslogs-create-group": "true"
                 }
+              },
+              "healthCheck": {
+                "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 60
               }
             }
           ]

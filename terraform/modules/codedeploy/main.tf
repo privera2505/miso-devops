@@ -7,7 +7,7 @@ resource "aws_codedeploy_deployment_group" "main" {
   app_name               = aws_codedeploy_app.app.name
   deployment_group_name  = "${var.project_name}-deployment-group-${var.environment}"
   service_role_arn       = var.codedeploy_service_role_arn
-  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+  deployment_config_name = "CodeDeployDefault.ECSAllAtOnceBlueGreen"
 
   auto_rollback_configuration {
     enabled = true
@@ -16,12 +16,17 @@ resource "aws_codedeploy_deployment_group" "main" {
 
   blue_green_deployment_config {
     deployment_ready_option {
-      action_on_timeout = "CONTINUE_DEPLOYMENT"
+      action_on_timeout    = "CONTINUE_DEPLOYMENT"
+      wait_time_in_minutes = 10
     }
 
     terminate_blue_instances_on_deployment_success {
       action                           = "TERMINATE"
       termination_wait_time_in_minutes = 5
+    }
+
+    green_fleet_provisioning_option {
+      action = "COPY_AUTO_SCALING_GROUP"
     }
   }
 
