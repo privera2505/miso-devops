@@ -125,15 +125,15 @@ phases:
       - echo "CodeDeploy usará la task definition desde el artefacto"
 
       - echo Creando appspec.yml para CodeDeploy ECS...
-      - echo "version 0.0" > appspec.yml
+      - echo "version: 0.0" > appspec.yml
       - echo "Resources:" >> appspec.yml
       - echo "  - TargetService:" >> appspec.yml
-      - echo "      Type AWS::ECS::Service" >> appspec.yml
+      - echo "      Type: AWS::ECS::Service" >> appspec.yml
       - echo "      Properties:" >> appspec.yml
-      - echo "        TaskDefinition <TASK_DEFINITION>" >> appspec.yml
+      - echo "        TaskDefinition: <TASK_DEFINITION>" >> appspec.yml
       - echo "        LoadBalancerInfo:" >> appspec.yml
-      - echo "          ContainerName ${CONTAINER_NAME}" >> appspec.yml
-      - echo "          ContainerPort 8000" >> appspec.yml
+      - echo "          ContainerName: ${CONTAINER_NAME}" >> appspec.yml
+      - echo "          ContainerPort: 8000" >> appspec.yml
 
       - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
@@ -144,10 +144,12 @@ phases:
       - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
       - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
 
-      - echo Empaquetando artefactos para CodeDeploy ECS...
+      - echo Creando directorio de salida y empaquetando artefactos...
       - mkdir -p output
-      - cp taskdef.json output/
-      - cp appspec.yml output/
+      - cp taskdef.json output/taskdef.json
+      - cp appspec.yml output/appspec.yml
+      - echo Verificando que los archivos fueron copiados correctamente...
+      - ls -la output/
 
   post_build:
     commands:
