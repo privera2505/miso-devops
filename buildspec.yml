@@ -87,22 +87,28 @@ phases:
 
       - echo Creando appspec.yml para CodeDeploy ECS...
       - |
-        cat > appspec.yml <<EOF
-        version: 0.0
+        cat > appspec.yml <<'EOF'
+        version: '0.0'
         Resources:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
                 TaskDefinition: "${TASK_DEFINITION_ARN}"
                 LoadBalancerInfo:
-                  ContainerName: "$CONTAINER_NAME"
+                  ContainerName: "${CONTAINER_NAME}"
                   ContainerPort: 8000
+                PlatformVersion: 'LATEST'
+                NetworkConfiguration:
+                  AwsvpcConfiguration:
+                    Subnets: ${SUBNET_IDS}
+                    SecurityGroups: ${SECURITY_GROUP_IDS}
+                    AssignPublicIp: ENABLED
         Hooks:
-          - BeforeInstall: "BeforeInstallHook"
-          - AfterInstall: "AfterInstallHook"
-          - AfterAllowTestTraffic: "AfterAllowTestTraffic"
-          - BeforeAllowTraffic: "BeforeAllowTraffic"
-          - AfterAllowTraffic: "AfterAllowTraffic"
+          - BeforeInstall: "scripts/before_install.sh"
+          - AfterInstall: "scripts/after_install.sh"
+          - AfterAllowTestTraffic: "scripts/after_allow_traffic.sh"
+          - BeforeAllowTraffic: "scripts/before_allow_traffic.sh"
+          - AfterAllowTraffic: "scripts/after_allow_traffic.sh"
         EOF
 
       - echo Creando scripts de hooks para CodeDeploy...
@@ -132,7 +138,28 @@ phases:
     commands:
       - echo Subiendo imagen a ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
+      - docker push $ECR_REPO_URI:latest
       
+      - echo "Registrando definición de tarea en ECS..."
+      - TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://taskdef.json \
+          --query 'taskDefinition.taskDefinitionArn' \
+          --output text)
+      - echo "TASK_DEFINITION_ARN=${TASK_DEFINITION_ARN}" >> env_vars
+      
+      - echo "Actualizando servicio ECS..."
+      - aws ecs update-service \
+          --cluster ${CLUSTER_NAME} \
+          --service ${SERVICE_NAME} \
+          --task-definition ${TASK_DEFINITION_ARN} \
+          --force-new-deployment
+      
+      - echo "Esperando a que el servicio se estabilice..."
+      - aws ecs wait services-stable \
+          --cluster ${CLUSTER_NAME} \
+          --services ${SERVICE_NAME}
+      
+      - echo "Despliegue completado exitosamente!"
 
 artifacts:
   files:
