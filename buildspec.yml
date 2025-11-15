@@ -56,7 +56,7 @@ phases:
       - if [ -z "$EXECUTION_ROLE_ARN" ]; then
           echo "Execution role not found, CodeDeploy will handle it automatically";
         else
-          echo "Found execution role: $EXECUTION_ROLE_ARN";
+          echo "Found execution role $EXECUTION_ROLE_ARN";
         fi
 
       - echo Creando taskdef.json para ECS Fargate...
