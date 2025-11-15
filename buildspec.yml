@@ -115,7 +115,7 @@ phases:
 
       - echo Creando appspec.yml para CodeDeploy ECS...
       - |
-        cat > appspec.yml <<EOF
+        cat > appspec.yml <<'EOF'
         version: 0.0
         Resources:
           - TargetService:
@@ -123,44 +123,22 @@ phases:
               Properties:
                 TaskDefinition: <TASK_DEFINITION>
                 LoadBalancerInfo:
-                  ContainerName: "$CONTAINER_NAME"
+                  ContainerName: <CONTAINER_NAME>
                   ContainerPort: 8000
-        Hooks:
-          - BeforeInstall:
-              location: scripts/before_install.sh
-              timeout: 300
-              runas: root
-          - AfterInstall:
-              location: scripts/after_install.sh
-              timeout: 300
-              runas: root
         EOF
 
-      - echo Creando scripts de hooks para CodeDeploy...
-      - |
-        mkdir -p scripts
-        cat > scripts/before_install.sh <<'EOL'
-        #!/bin/bash
-        echo "Ejecutando hook BeforeInstall"
-        # Aquí puedes agregar acciones previas, como backups, limpieza, etc.
-        EOL
+      - echo Eliminando espacios en blanco del inicio de appspec.yml...
+      - sed -i 's/^        //' appspec.yml
 
-        cat > scripts/after_install.sh <<'EOL'
-        #!/bin/bash
-        echo "Ejecutando hook AfterInstall"
-        # Aquí puedes agregar acciones posteriores, como migraciones, validaciones, etc.
-        EOL
-
-        chmod +x scripts/*.sh
-
-      - echo Mostrando contenido generado de appspec.yml
+      - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
+      - echo "Verificando que el YAML sea válido..."
+      - python -c "import yaml; yaml.safe_load(open('appspec.yml'))" || (echo "ERROR: appspec.yml no es YAML válido" && exit 1)
 
       - echo Empaquetando artefactos para CodeDeploy ECS...
       - mkdir -p output
       - cp taskdef.json output/
       - cp appspec.yml output/
-      - cp -r scripts output/
 
   post_build:
     commands:
