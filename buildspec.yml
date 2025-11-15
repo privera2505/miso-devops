@@ -52,12 +52,13 @@ phases:
       - export DB_PASSWORD=${DB_PASSWORD}
 
       - echo Obteniendo execution role ARN...
-      - EXECUTION_ROLE_ARN=$(aws iam get-role --role-name ecsTaskExecutionRole --query 'Role.Arn' --output text 2>/dev/null || echo "")
-      - if [ -z "$EXECUTION_ROLE_ARN" ]; then
-          echo "Execution role not found, CodeDeploy will handle it automatically";
-        else
-          echo "Found execution role $EXECUTION_ROLE_ARN";
-        fi
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - EXECUTION_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
+      - echo "Using execution role: $EXECUTION_ROLE_ARN"
+      - echo "AWS Account ID: $AWS_ACCOUNT_ID"
+
+      - echo Verificando que el execution role existe...
+      - aws iam get-role --role-name ecsTaskExecutionRole --query 'Role.RoleName' --output text || (echo "ERROR: ecsTaskExecutionRole no existe" && exit 1)
 
       - echo Creando taskdef.json para ECS Fargate...
       - |
@@ -119,6 +120,8 @@ phases:
       - cat taskdef.json
       - echo Validando JSON syntax...
       - jq empty taskdef.json
+      - echo Verificando que executionRoleArn esté presente...
+      - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
 
       - echo Guardando taskdef.json para CodeDeploy...
       - echo "CodeDeploy usará la task definition desde el artefacto"
