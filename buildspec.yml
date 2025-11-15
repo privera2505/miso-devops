@@ -45,12 +45,6 @@ phases:
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
-      - echo Obteniendo ARNs de los roles IAM...
-      - EXECUTION_ROLE_ARN=$(aws iam get-role --role-name ecsTaskExecutionRole --query 'Role.Arn' --output text)
-      - TASK_ROLE_ARN=$(aws iam get-role --role-name ecsTaskExecutionRole --query 'Role.Arn' --output text)
-      - echo "EXECUTION_ROLE_ARN=$EXECUTION_ROLE_ARN"
-      - echo "TASK_ROLE_ARN=$TASK_ROLE_ARN"
-
       - echo Configurando variables de entorno de la base de datos...
       - export DB_HOST=${DB_HOST}
       - export DB_NAME=${DB_NAME}
@@ -66,8 +60,6 @@ phases:
           "requiresCompatibilities": ["FARGATE"],
           "cpu": "1024",
           "memory": "3072",
-          "executionRoleArn": "$EXECUTION_ROLE_ARN",
-          "taskRoleArn": "$TASK_ROLE_ARN",
           "containerDefinitions": [
             {
               "name": "$CONTAINER_NAME",
@@ -118,20 +110,8 @@ phases:
       - echo Validando JSON syntax...
       - jq empty taskdef.json
 
-      - echo Registrando nueva definición de tarea en ECS...
-      - TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
-          --cli-input-json file://taskdef.json \
-          --query "taskDefinition.taskDefinitionArn" \
-          --output text)
-      - export TASK_DEFINITION_ARN
-      - echo "TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN"
-
-      - echo Verificando que el ARN fue obtenido correctamente...
-      - |
-        if [ -z "$TASK_DEFINITION_ARN" ] || [ "$TASK_DEFINITION_ARN" = "None" ]; then
-          echo "ERROR: No se pudo registrar la task definition"
-          exit 1
-        fi
+      - echo Guardando taskdef.json para CodeDeploy...
+      - echo "CodeDeploy usará la task definition desde el artefacto"
 
       - echo Creando appspec.yml para CodeDeploy ECS...
       - |
@@ -141,7 +121,7 @@ phases:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "$TASK_DEFINITION_ARN"
+                TaskDefinition: <TASK_DEFINITION>
                 LoadBalancerInfo:
                   ContainerName: "$CONTAINER_NAME"
                   ContainerPort: 8000
