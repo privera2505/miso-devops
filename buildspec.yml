@@ -123,7 +123,7 @@ phases:
           --query "taskDefinition.taskDefinitionArn" \
           --output text)
       - export TASK_DEFINITION_ARN
-      - echo "Task definition registrada: $TASK_DEFINITION_ARN"
+      - echo "Task definition registrada: ${TASK_DEFINITION_ARN}"
       - jq empty taskdef.json
       - echo Verificando que executionRoleArn este presente...
       - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
