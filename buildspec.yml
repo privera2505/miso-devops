@@ -12,6 +12,7 @@ phases:
     commands:
       - echo Instalando dependencias...
       - pip install -r requirements.txt
+
       - echo Instalando jq...
       - if command -v yum &> /dev/null; then
           yum install -y jq;
@@ -98,11 +99,14 @@ phases:
                   ContainerName: "$CONTAINER_NAME"
                   ContainerPort: 8000
         Hooks:
-          - BeforeInstall: "BeforeInstallHook"
-          - AfterInstall: "AfterInstallHook"
-          - AfterAllowTestTraffic: "AfterAllowTestTraffic"
-          - BeforeAllowTraffic: "BeforeAllowTraffic"
-          - AfterAllowTraffic: "AfterAllowTraffic"
+          - BeforeInstall:
+              location: scripts/before_install.sh
+              timeout: 300
+              runas: root
+          - AfterInstall:
+              location: scripts/after_install.sh
+              timeout: 300
+              runas: root
         EOF
 
       - echo Creando scripts de hooks para CodeDeploy...
@@ -132,10 +136,8 @@ phases:
     commands:
       - echo Subiendo imagen a ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
-      
 
 artifacts:
   files:
     - output/**/*
   discard-paths: yes
-  
