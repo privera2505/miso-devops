@@ -139,10 +139,27 @@ phases:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "$TASK_DEFINITION_ARN"
+                TaskDefinition: ${TASK_DEFINITION_ARN}
                 LoadBalancerInfo:
-                  ContainerName: "$CONTAINER_NAME"
+                  ContainerName: ${CONTAINER_NAME}
                   ContainerPort: 8000
+        Hooks:
+          - BeforeInstall:
+              location: scripts/before_install.sh
+              timeout: 300
+              runas: root
+          - Install:
+              location: scripts/install.sh
+              timeout: 300
+              runas: root
+          - AfterInstall:
+              location: scripts/after_install.sh
+              timeout: 300
+              runas: root
+          - AllowTraffic:
+              location: scripts/allow_traffic.sh
+              timeout: 300
+              runas: root
         EOF
 
       - echo Validando sintaxis YAML de appspec.yml...
