@@ -125,21 +125,7 @@ phases:
       - echo "CodeDeploy usará la task definition desde el artefacto"
 
       - echo Creando appspec.yml para CodeDeploy ECS...
-      - |
-        cat > appspec.yml <<EOF
-        version: 0.0
-        Resources:
-          - TargetService:
-              Type: AWS::ECS::Service
-              Properties:
-                TaskDefinition: <TASK_DEFINITION>
-                LoadBalancerInfo:
-                  ContainerName: $CONTAINER_NAME
-                  ContainerPort: 8000
-        EOF
-
-      - echo Eliminando espacios en blanco del inicio de appspec.yml...
-      - sed -i 's/^        //' appspec.yml
+      - printf "version: 0.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: <TASK_DEFINITION>\n        LoadBalancerInfo:\n          ContainerName: %s\n          ContainerPort: 8000\n" "$CONTAINER_NAME" > appspec.yml
 
       - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
