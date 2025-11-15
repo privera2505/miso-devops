@@ -1,42 +1,50 @@
----
 version: 0.2
+
 env:
   shell: bash
   variables:
-    CONTAINER_NAME: blacklists-api
-    TASK_FAMILY: blacklists-api-task
-    TASK_DEFINITION_ARN: ""
+    CONTAINER_NAME: "blacklists-api"
+    TASK_FAMILY: "blacklists-api-task"
+
 phases:
   install:
     commands:
       - echo Instalando dependencias...
       - pip install -r requirements.txt
+
       - echo Instalando jq...
-      - if command -v yum &> /dev/null; then yum install -y jq; elif command -v
-        apt-get &> /dev/null; then apt-get update && apt-get install -y jq; else
-        echo "No se pudo determinar el gestor de paquetes (yum/apt-get). Instala
-        jq manualmente."; exit 1; fi
+      - if command -v yum &> /dev/null; then
+          yum install -y jq;
+        elif command -v apt-get &> /dev/null; then
+          apt-get update && apt-get install -y jq;
+        else
+          echo "No se pudo determinar el gestor de paquetes (yum/apt-get). Instala jq manualmente.";
+          exit 1;
+        fi
       - jq --version
+
   pre_build:
     commands:
       - echo Ejecutando pruebas unitarias...
-      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo
-        "Las pruebas fallaron" && exit 1)
+      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "Las pruebas fallaron" && exit 1)
+
       - echo Iniciando sesión en Amazon ECR...
       - aws --version
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login
-        --username AWS --password-stdin $ECR_REPO_URI
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+
       - echo Calculando IMAGE_TAG...
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
       - export IMAGE_TAG
       - echo IMAGE_TAG=$IMAGE_TAG
       - echo ECR_REPO_URI=$ECR_REPO_URI
+
   build:
     commands:
       - echo Construyendo imagen Docker...
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
-      - echo Creando taskdef.json para Fargate...
+
+      - echo Creando taskdef.json para ECS Fargate...
       - |
         cat > taskdef.json <<EOF
         {
@@ -76,6 +84,15 @@ phases:
           ]
         }
         EOF
+
+      - echo Registrando nueva definición de tarea en ECS...
+      - TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://taskdef.json \
+          --query "taskDefinition.taskDefinitionArn" \
+          --output text)
+      - export TASK_DEFINITION_ARN
+      - echo "TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN"
+
       - echo Creando appspec.yml para CodeDeploy ECS...
       - |
         cat > appspec.yml <<EOF
@@ -84,7 +101,7 @@ phases:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "${TASK_DEFINITION_ARN}"
+                TaskDefinition: "$TASK_DEFINITION_ARN"
                 LoadBalancerInfo:
                   ContainerName: "$CONTAINER_NAME"
                   ContainerPort: 8000
@@ -98,31 +115,38 @@ phases:
               timeout: 300
               runas: root
         EOF
+
       - echo Creando scripts de hooks para CodeDeploy...
       - |
         mkdir -p scripts
         cat > scripts/before_install.sh <<'EOL'
         #!/bin/bash
         echo "Ejecutando hook BeforeInstall"
-        # Agrega aquí comandos previos a la instalación
+        # Aquí puedes agregar acciones previas, como backups, limpieza, etc.
         EOL
 
         cat > scripts/after_install.sh <<'EOL'
         #!/bin/bash
         echo "Ejecutando hook AfterInstall"
-        # Agrega aquí comandos posteriores a la instalación
+        # Aquí puedes agregar acciones posteriores, como migraciones, validaciones, etc.
         EOL
 
         chmod +x scripts/*.sh
+
+      - echo Mostrando contenido generado de appspec.yml:
+      - cat appspec.yml
+
       - echo Empaquetando artefactos para CodeDeploy ECS...
       - mkdir -p output
       - cp taskdef.json output/
       - cp appspec.yml output/
       - cp -r scripts output/
+
   post_build:
     commands:
       - echo Subiendo imagen a ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
+
 artifacts:
   files:
     - output/**/*
