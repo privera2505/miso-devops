@@ -12,6 +12,16 @@ phases:
     commands:
       - echo Instalando dependencias...
       - pip install -r requirements.txt
+      - echo Instalando jq...
+      - if command -v yum &> /dev/null; then
+          yum install -y jq;
+        elif command -v apt-get &> /dev/null; then
+          apt-get update && apt-get install -y jq;
+        else
+          echo "No se pudo determinar el gestor de paquetes (yum/apt-get). Instala jq manualmente.";
+          exit 1;
+        fi
+      - jq --version
 
   pre_build:
     commands:
@@ -129,14 +139,31 @@ phases:
       - echo "TASK_DEFINITION_ARN=${TASK_DEFINITION_ARN}" >> env_vars
       
       - echo "Iniciando despliegue con CodeDeploy..."
-      - aws deploy create-deployment \
+      - |
+        APPSPEC_CONTENT='{
+          "version": 0.0,
+          "Resources": [{
+            "TargetService": {
+              "Type": "AWS::ECS::Service",
+              "Properties": {
+                "TaskDefinition": "'${TASK_DEFINITION_ARN}'",
+                "LoadBalancerInfo": {
+                  "ContainerName": "'${CONTAINER_NAME}'",
+                  "ContainerPort": 8000
+                }
+              }
+            }
+          }]
+        }'
+        
+        aws deploy create-deployment \
           --application-name ${CODE_DEPLOY_APP} \
           --deployment-group-name ${CODE_DEPLOY_GROUP} \
           --revision '{
             "revisionType": "AppSpecContent",
             "appSpecContent": {
-              "content": "{\"version\":0.0,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'${TASK_DEFINITION_ARN}'\",\"LoadBalancerInfo\":{\"ContainerName\":\"'${CONTAINER_NAME}'\",\"ContainerPort\":8000}}}]}",
-              "sha256": "$(echo -n "{\"version\":0.0,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'${TASK_DEFINITION_ARN}'\",\"LoadBalancerInfo\":{\"ContainerName\":\"'${CONTAINER_NAME}'\",\"ContainerPort\":8000}}}]}" | sha256sum | cut -d" " -f1)"
+              "content": "'"$(echo $APPSPEC_CONTENT | jq -c | sed 's/"/\\"/g')"'",
+              "sha256": "'"$(echo -n "$APPSPEC_CONTENT" | sha256sum | cut -d" " -f1)"'"
             }
           }'
       - echo "¡Despliegue iniciado correctamente!"
