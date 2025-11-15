@@ -57,7 +57,6 @@ phases:
       - echo "Using execution role $EXECUTION_ROLE_ARN"
       - echo "AWS Account ID $AWS_ACCOUNT_ID"
 
-
       - echo Creando taskdef.json para ECS Fargate...
       - |
         cat > taskdef.json <<EOF
@@ -123,15 +122,10 @@ phases:
 
       - echo Validando taskdef.json generado...
       - cat taskdef.json
-      - echo Validando JSON syntax...
       - jq empty taskdef.json
-      - echo Verificando que executionRoleArn este presente...
       - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
 
-      - echo Guardando taskdef.json para CodeDeploy...
-      - echo "CodeDeploy usara la task definition desde el artefacto"
-
-      - echo Creando appspec.yml para CodeDeploy ECS...
+      - echo Creando appspec.yml para CodeDeploy ECS (sin hooks)...
       - |
         cat > appspec.yml << 'APPSPEC_EOF'
         version: 0.0
@@ -146,20 +140,10 @@ phases:
         APPSPEC_EOF
       - sed "s/CONTAINER_PLACEHOLDER/${CONTAINER_NAME}/g" appspec.yml > appspec_temp.yml && mv appspec_temp.yml appspec.yml
 
-      - echo Validando sintaxis YAML de appspec.yml...
-      - cat appspec.yml
-      - echo "Verificando que el YAML sea valido con jq..."
-      - jq -r . appspec.yml > /dev/null 2>&1 || echo "ADVERTENCIA jq no puede procesar YAML, continuando..."
-      - echo "Verificando estructura basica del appspec.yml..."
-      - grep -q "version:" appspec.yml && echo "✓ version field found"
-      - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
-      - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
-
       - echo Creando directorio de salida y empaquetando artefactos...
       - mkdir -p output
       - cp taskdef.json output/taskdef.json
       - cp appspec.yml output/appspec.yml
-      - echo Verificando que los archivos fueron copiados correctamente...
       - ls -la output/
 
   post_build:
