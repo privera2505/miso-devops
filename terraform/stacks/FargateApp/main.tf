@@ -108,9 +108,9 @@ module "s3_bucket_for_versions" {
 ## CodeConnections for github
 ############################################################
 #
-#module "connection_github" {
-#    source = "../../modules/code_connections_github"
-#}
+module "connection_github" {
+   source = "../../modules/code_connections_github"
+}
 
 ###########################################################
 # IAM CodeBuild
@@ -132,7 +132,7 @@ module "codebuild_aws" {
     source_location = var.source_location
     source_type = var.source_type
     source_version = var.source_version
-    codeconnections_arn = "arn:aws:codeconnections:us-east-1:291935881445:connection/f71457b1-01b1-46a3-865e-1e097cb90602"
+    codeconnections_arn = module.connection_github.codeconnettions_arn
     #module.connection_github.codeconnettions_arn
     compute_type = var.compute_type
     aws_region = var.aws_region
@@ -149,8 +149,31 @@ module "codebuild_aws" {
 
 module "iam_codepipeline" {
     source = "../../modules/iam_codepipeline"
-    codeconnections_arn = "arn:aws:codeconnections:us-east-1:291935881445:connection/f71457b1-01b1-46a3-865e-1e097cb90602"
-    #module.connection_github.codeconnettions_arn
+    codeconnections_arn = module.connection_github.codeconnettions_arn
+}
+
+###########################################################
+# CodeDeploy Module
+###########################################################
+
+module "codedeploy_aws" {
+    source = "../../modules/codedeploy"
+    project_name = var.project_name
+    environment = var.environment
+    codedeploy_service_role_arn = module.iam_codedeploy.codedeploy_service_role_arn
+    ecs_cluster_name = module.ecs_cluster.cluster_name
+    ecs_service_name = module.ecs_cluster.service_name
+    alb_listener_arn = module.alb.alb_listener_arn
+    blue_target_group_name = module.target_group_a.target_group_name
+    green_target_group_name = module.target_group_b.target_group_name
+}
+
+###########################################################
+# IAM CodeDeploy Module
+###########################################################
+
+module "iam_codedeploy" {
+    source = "../../modules/iam_codedeploy"
 }
 
 ###########################################################
@@ -163,8 +186,14 @@ module "codepipeline_aws" {
     bucket_versiones = module.s3_bucket_for_versions.bucket_name
     source_location = var.source_location
     codebuild_name = module.codebuild_aws.project_name
-    codeconnections_arn = "arn:aws:codeconnections:us-east-1:291935881445:connection/f71457b1-01b1-46a3-865e-1e097cb90602"
+    codeconnections_arn = module.connection_github.codeconnettions_arn
     #module.connection_github.codeconnettions_arn
     source_version = var.source_version
     role_arn = module.iam_codepipeline.codepipeline_role_arn
+    # Nuevos parámetros para CodeDeploy
+    codedeploy_app_name = module.codedeploy_aws.app_name
+    codedeploy_deployment_group = module.codedeploy_aws.deployment_group_name
+    ecs_cluster_name = module.ecs_cluster.cluster_name
+    ecs_service_name = module.ecs_cluster.service_name
+    container_name = var.container_name
 }

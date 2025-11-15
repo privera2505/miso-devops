@@ -5,6 +5,7 @@ env:
   variables:
     CONTAINER_NAME: "blacklists-api"
     TASK_FAMILY: "blacklists-api-task"
+    TASK_DEFINITION_ARN: ""
 
 phases:
   install:
@@ -14,10 +15,10 @@ phases:
 
   pre_build:
     commands:
-      - echo Running unit tests...
-      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "Tests failed" && exit 1)
+      - echo Ejecutando pruebas unitarias...
+      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "Las pruebas fallaron" && exit 1)
 
-      - echo Logging in to Amazon ECR...
+      - echo Iniciando sesión en Amazon ECR...
       - aws --version
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
 
@@ -29,9 +30,9 @@ phases:
 
   build:
     commands:
-      - echo Building Docker image...
+      - echo Construyendo imagen Docker...
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
-      - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:$IMAGE_TAG
+      - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
       - echo Creando taskdef.json para Fargate...
       - |
@@ -54,7 +55,21 @@ phases:
                   "containerPort": 8000,
                   "protocol": "tcp"
                 }
-              ]
+              ],
+              "environment": [
+                {
+                  "name": "ENVIRONMENT",
+                  "value": "${ENVIRONMENT}"
+                }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "/ecs/${TASK_FAMILY}",
+                  "awslogs-region": "${AWS_DEFAULT_REGION}",
+                  "awslogs-stream-prefix": "ecs"
+                }
+              }
             }
           ]
         }
@@ -68,24 +83,65 @@ phases:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "taskdef.json"
+                TaskDefinition: "${TASK_DEFINITION_ARN}"
                 LoadBalancerInfo:
                   ContainerName: "$CONTAINER_NAME"
                   ContainerPort: 8000
+        Hooks:
+          - BeforeInstall: "BeforeInstallHook"
+          - AfterInstall: "AfterInstallHook"
+          - AfterAllowTestTraffic: "AfterAllowTestTraffic"
+          - BeforeAllowTraffic: "BeforeAllowTraffic"
+          - AfterAllowTraffic: "AfterAllowTraffic"
         EOF
+
+      - echo Creando scripts de hooks para CodeDeploy...
+      - |
+        mkdir -p scripts
+        cat > scripts/before_install.sh <<'EOL'
+        #!/bin/bash
+        echo "Ejecutando hook BeforeInstall"
+        # Agrega aquí comandos previos a la instalación
+        EOL
+
+        cat > scripts/after_install.sh <<'EOL'
+        #!/bin/bash
+        echo "Ejecutando hook AfterInstall"
+        # Agrega aquí comandos posteriores a la instalación
+        EOL
+
+        chmod +x scripts/*.sh
 
       - echo Empaquetando artefactos para CodeDeploy ECS...
       - mkdir -p output
       - cp taskdef.json output/
       - cp appspec.yml output/
+      - cp -r scripts output/
 
   post_build:
     commands:
-      - echo Pushing image to ECR...
+      - echo Subiendo imagen a ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
-      - echo Build done on `date`
+      - docker push $ECR_REPO_URI:latest
+      
+      - echo "Registrando nueva definición de tarea en ECS..."
+      - TASK_DEFINITION_ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --output text)
+      - echo "TASK_DEFINITION_ARN=${TASK_DEFINITION_ARN}" >> env_vars
+      
+      - echo "Iniciando despliegue con CodeDeploy..."
+      - aws deploy create-deployment \
+          --application-name ${CODE_DEPLOY_APP} \
+          --deployment-group-name ${CODE_DEPLOY_GROUP} \
+          --revision '{
+            "revisionType": "AppSpecContent",
+            "appSpecContent": {
+              "content": "{\"version\":0.0,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'${TASK_DEFINITION_ARN}'\",\"LoadBalancerInfo\":{\"ContainerName\":\"'${CONTAINER_NAME}'\",\"ContainerPort\":8000}}}]}",
+              "sha256": "$(echo -n "{\"version\":0.0,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"'${TASK_DEFINITION_ARN}'\",\"LoadBalancerInfo\":{\"ContainerName\":\"'${CONTAINER_NAME}'\",\"ContainerPort\":8000}}}]}" | sha256sum | cut -d" " -f1)"
+            }
+          }'
+      - echo "¡Despliegue iniciado correctamente!"
 
 artifacts:
   files:
-    - output/*
+    - output/**/*
   discard-paths: yes

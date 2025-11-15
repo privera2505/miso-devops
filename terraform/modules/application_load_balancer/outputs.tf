@@ -13,3 +13,8 @@ output "listener_80_arn" {
 output "listener_8080_arn" {
     value = aws_lb_listener.http_8080.arn
 }
+
+output "alb_listener_arn" {
+    value = aws_lb_listener.http_80.arn
+    description = "ARN del listener principal del ALB"
+}

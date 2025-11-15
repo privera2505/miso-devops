@@ -1,4 +1,4 @@
-region  = "us-east-1" 
-key     = "beanstalk-devops/terraform.tfstate"
+region  = "us-east-1"
+key     = "fargate-devops/terraform.tfstate"
 encrypt = true
-bucket  = "terraform-devops-ooep" # Utilice el nombre del bucket que creó en el tutorial Hello Terraform.
+bucket  = "terraform-devops-ooep-v2"

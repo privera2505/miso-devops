@@ -46,4 +46,26 @@ resource "aws_codepipeline" "docker_build_pipe" {
             }
         }
     }
+
+    stage {
+        name = "Deploy"
+
+        action {
+            name = "Deploy"
+            category = "Deploy"
+            owner = "AWS"
+            provider = "CodeDeployToECS"
+            input_artifacts = ["build_output"]
+            version = "1"
+
+            configuration = {
+                ApplicationName               = var.codedeploy_app_name
+                DeploymentGroupName          = var.codedeploy_deployment_group
+                TaskDefinitionTemplateArtifact = "build_output"
+                AppSpecTemplateArtifact      = "build_output"
+                TaskDefinitionTemplatePath   = "taskdef.json"
+                AppSpecTemplatePath          = "appspec.yml"
+            }
+        }
+    }
 }

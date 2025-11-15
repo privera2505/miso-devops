@@ -134,3 +134,12 @@ variable "source_version" {
 variable "pipeline_name" {
     type = string
 }
+
+###########################################################
+# CodeDeploy Variables
+###########################################################
+
+variable "project_name" {
+    description = "Nombre del proyecto para CodeDeploy"
+    type = string
+}
