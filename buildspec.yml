@@ -29,7 +29,7 @@ phases:
       - echo Ejecutando pruebas unitarias...
       - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "Las pruebas fallaron" && exit 1)
 
-      - echo Iniciando sesión en Amazon ECR...
+      - echo Iniciando sesion en Amazon ECR...
       - aws --version
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
 
@@ -118,28 +118,28 @@ phases:
       - cat taskdef.json
       - echo Validando JSON syntax...
       - jq empty taskdef.json
-      - echo Verificando que executionRoleArn esté presente...
+      - echo Verificando que executionRoleArn este presente...
       - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
 
       - echo Guardando taskdef.json para CodeDeploy...
-      - echo "CodeDeploy usará la task definition desde el artefacto"
+      - echo "CodeDeploy usara la task definition desde el artefacto"
 
       - echo Creando appspec.yml para CodeDeploy ECS...
-      - echo "version: 0.0" > appspec.yml
-      - echo "Resources:" >> appspec.yml
-      - echo "  - TargetService:" >> appspec.yml
-      - echo "      Type: AWS::ECS::Service" >> appspec.yml
-      - echo "      Properties:" >> appspec.yml
-      - echo "        TaskDefinition: <TASK_DEFINITION>" >> appspec.yml
-      - echo "        LoadBalancerInfo:" >> appspec.yml
+      - echo 'version: 0.0' > appspec.yml
+      - echo 'Resources:' >> appspec.yml
+      - echo '  - TargetService:' >> appspec.yml
+      - echo '      Type: AWS::ECS::Service' >> appspec.yml
+      - echo '      Properties:' >> appspec.yml
+      - echo '        TaskDefinition: <TASK_DEFINITION>' >> appspec.yml
+      - echo '        LoadBalancerInfo:' >> appspec.yml
       - echo "          ContainerName: ${CONTAINER_NAME}" >> appspec.yml
-      - echo "          ContainerPort: 8000" >> appspec.yml
+      - echo '          ContainerPort: 8000' >> appspec.yml
 
       - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
-      - echo "Verificando que el YAML sea válido con jq..."
+      - echo "Verificando que el YAML sea valido con jq..."
       - jq -r . appspec.yml > /dev/null 2>&1 || echo "ADVERTENCIA jq no puede procesar YAML, continuando..."
-      - echo "Verificando estructura básica del appspec.yml..."
+      - echo "Verificando estructura basica del appspec.yml..."
       - grep -q "version:" appspec.yml && echo "✓ version field found"
       - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
       - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
