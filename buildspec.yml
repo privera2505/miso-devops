@@ -132,41 +132,7 @@ phases:
     commands:
       - echo Subiendo imagen a ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
-      - docker push $ECR_REPO_URI:latest
       
-      - echo "Registrando nueva definición de tarea en ECS..."
-      - TASK_DEFINITION_ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.json --query 'taskDefinition.taskDefinitionArn' --output text)
-      - echo "TASK_DEFINITION_ARN=${TASK_DEFINITION_ARN}" >> env_vars
-      
-      - echo "Iniciando despliegue con CodeDeploy..."
-      - |
-        APPSPEC_CONTENT='{
-          "version": 0.0,
-          "Resources": [{
-            "TargetService": {
-              "Type": "AWS::ECS::Service",
-              "Properties": {
-                "TaskDefinition": "'${TASK_DEFINITION_ARN}'",
-                "LoadBalancerInfo": {
-                  "ContainerName": "'${CONTAINER_NAME}'",
-                  "ContainerPort": 8000
-                }
-              }
-            }
-          }]
-        }'
-        
-        aws deploy create-deployment \
-          --application-name ${CODE_DEPLOY_APP} \
-          --deployment-group-name ${CODE_DEPLOY_GROUP} \
-          --revision '{
-            "revisionType": "AppSpecContent",
-            "appSpecContent": {
-              "content": "'"$(echo $APPSPEC_CONTENT | jq -c | sed 's/"/\\"/g')"'",
-              "sha256": "'"$(echo -n "$APPSPEC_CONTENT" | sha256sum | cut -d" " -f1)"'"
-            }
-          }'
-      - echo "¡Despliegue iniciado correctamente!"
 
 artifacts:
   files:
