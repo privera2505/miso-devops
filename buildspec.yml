@@ -133,7 +133,7 @@ phases:
       - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
       - echo "Verificando que el YAML sea válido..."
-      - python -c "import yaml; yaml.safe_load(open('appspec.yml'))" || (echo "ERROR: appspec.yml no es YAML válido" && exit 1)
+      - python -c "import yaml; yaml.safe_load(open('appspec.yml'))" || (echo "ERROR appspec.yml no es YAML válido" && exit 1)
 
       - echo Empaquetando artefactos para CodeDeploy ECS...
       - mkdir -p output
