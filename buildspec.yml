@@ -3,8 +3,9 @@ version: 0.2
 env:
   shell: bash
   variables:
-    CONTAINER_NAME: "blacklists-api"
-    TASK_FAMILY: "blacklists-api-task"
+    CONTAINER_NAME: "appcontainer"
+    TASK_FAMILY: "app-fargate-task"
+    TASK_DEFINITION_ARN: ""
 
 phases:
   install:
@@ -51,8 +52,8 @@ phases:
           "family": "$TASK_FAMILY",
           "networkMode": "awsvpc",
           "requiresCompatibilities": ["FARGATE"],
-          "cpu": "256",
-          "memory": "512",
+          "cpu": "1024",
+          "memory": "3072",
           "executionRoleArn": "$EXECUTION_ROLE_ARN",
           "taskRoleArn": "$TASK_ROLE_ARN",
           "containerDefinitions": [
@@ -60,16 +61,31 @@ phases:
               "name": "$CONTAINER_NAME",
               "image": "$ECR_REPO_URI:$IMAGE_TAG",
               "essential": true,
+              "cpu": 10,
+              "memory": 256,
               "portMappings": [
                 {
                   "containerPort": 8000,
+                  "hostPort": 8000,
                   "protocol": "tcp"
                 }
               ],
               "environment": [
                 {
-                  "name": "ENVIRONMENT",
-                  "value": "${ENVIRONMENT}"
+                  "name": "DB_HOST",
+                  "value": "${DB_HOST}"
+                },
+                {
+                  "name": "DB_NAME",
+                  "value": "${DB_NAME}"
+                },
+                {
+                  "name": "DB_USER",
+                  "value": "${DB_USER}"
+                },
+                {
+                  "name": "DB_PASSWORD",
+                  "value": "${DB_PASSWORD}"
                 }
               ],
               "logConfiguration": {
@@ -133,7 +149,7 @@ phases:
 
         chmod +x scripts/*.sh
 
-      - echo Mostrando contenido generado de appspec.yml:
+      - echo Mostrando contenido generado de appspec.yml
       - cat appspec.yml
 
       - echo Empaquetando artefactos para CodeDeploy ECS...
