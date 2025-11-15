@@ -145,3 +145,4 @@ artifacts:
   files:
     - output/**/*
   discard-paths: yes
+  
