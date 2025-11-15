@@ -117,6 +117,13 @@ phases:
       - echo Validando taskdef.json generado...
       - cat taskdef.json
       - echo Validando JSON syntax...
+      - echo Registrando nueva task definition en ECS...
+      - TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://taskdef.json \
+          --query "taskDefinition.taskDefinitionArn" \
+          --output text)
+      - export TASK_DEFINITION_ARN
+      - echo "Task definition registrada: $TASK_DEFINITION_ARN"
       - jq empty taskdef.json
       - echo Verificando que executionRoleArn este presente...
       - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
@@ -124,21 +131,22 @@ phases:
       - echo Guardando taskdef.json para CodeDeploy...
       - echo "CodeDeploy usara la task definition desde el artefacto"
 
-      - echo Creando appspec.yml para CodeDeploy ECS...
+      - echo Creando appspec.yml con ARN real...
       - |
-        {
-          echo "version: 0.0"
-          echo "Resources:"
-          echo "  - TargetService:"
-          echo "      Type: AWS::ECS::Service"
-          echo "      Properties:"
-          echo "        TaskDefinition: <TASK_DEFINITION>"
-          echo "        LoadBalancerInfo:"
-          echo "          ContainerName: ${CONTAINER_NAME}"
-          echo "          ContainerPort: 8000"
-        } > appspec.yml
+        cat > appspec.yml <<EOF
+        version: 0.0
+        Resources:
+          - TargetService:
+              Type: AWS::ECS::Service
+              Properties:
+                TaskDefinition: "$TASK_DEFINITION_ARN"
+                LoadBalancerInfo:
+                  ContainerName: "$CONTAINER_NAME"
+                  ContainerPort: 8000
+        EOF
 
       - echo Validando sintaxis YAML de appspec.yml...
+      - echo Mostrando appspec.yml generado
       - cat appspec.yml
       - echo "Verificando que el YAML sea valido con jq..."
       - jq -r . appspec.yml > /dev/null 2>&1 || echo "ADVERTENCIA jq no puede procesar YAML, continuando..."
