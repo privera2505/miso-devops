@@ -125,15 +125,19 @@ phases:
       - echo "CodeDeploy usara la task definition desde el artefacto"
 
       - echo Creando appspec.yml para CodeDeploy ECS...
-      - echo 'version: 0.0' > appspec.yml
-      - echo 'Resources:' >> appspec.yml
-      - echo '  - TargetService:' >> appspec.yml
-      - echo '      Type: AWS::ECS::Service' >> appspec.yml
-      - echo '      Properties:' >> appspec.yml
-      - echo '        TaskDefinition: <TASK_DEFINITION>' >> appspec.yml
-      - echo '        LoadBalancerInfo:' >> appspec.yml
-      - echo "          ContainerName: ${CONTAINER_NAME}" >> appspec.yml
-      - echo '          ContainerPort: 8000' >> appspec.yml
+      - |
+        cat > appspec.yml << 'APPSPEC_EOF'
+        version: 0.0
+        Resources:
+          - TargetService:
+              Type: AWS::ECS::Service
+              Properties:
+                TaskDefinition: <TASK_DEFINITION>
+                LoadBalancerInfo:
+                  ContainerName: CONTAINER_PLACEHOLDER
+                  ContainerPort: 8000
+        APPSPEC_EOF
+      - sed "s/CONTAINER_PLACEHOLDER/${CONTAINER_NAME}/g" appspec.yml > appspec_temp.yml && mv appspec_temp.yml appspec.yml
 
       - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
