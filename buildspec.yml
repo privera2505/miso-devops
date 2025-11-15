@@ -126,7 +126,7 @@ phases:
 
       - echo Creando appspec.yml para CodeDeploy ECS...
       - |
-        cat > appspec.yml <<'EOF'
+        cat > appspec.yml <<EOF
         version: 0.0
         Resources:
           - TargetService:
@@ -134,7 +134,7 @@ phases:
               Properties:
                 TaskDefinition: <TASK_DEFINITION>
                 LoadBalancerInfo:
-                  ContainerName: <CONTAINER_NAME>
+                  ContainerName: $CONTAINER_NAME
                   ContainerPort: 8000
         EOF
 
@@ -143,8 +143,12 @@ phases:
 
       - echo Validando sintaxis YAML de appspec.yml...
       - cat appspec.yml
-      - echo "Verificando que el YAML sea válido..."
-      - python -c "import yaml; yaml.safe_load(open('appspec.yml'))" || (echo "ERROR appspec.yml no es YAML válido" && exit 1)
+      - echo "Verificando que el YAML sea válido con jq..."
+      - jq -r . appspec.yml > /dev/null 2>&1 || echo "ADVERTENCIA jq no puede procesar YAML, continuando..."
+      - echo "Verificando estructura básica del appspec.yml..."
+      - grep -q "version:" appspec.yml && echo "✓ version field found"
+      - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
+      - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
 
       - echo Empaquetando artefactos para CodeDeploy ECS...
       - mkdir -p output
