@@ -28,3 +28,9 @@ terraform/stacks/FargateApp/.tfplan
 # Ignorar tfstate y backup
 terraform/stacks/s3/terraform.tfstate
 terraform/stacks/s3/terraform.tfstate.backup
+
+#Ignorar cache de terraform
+.terraform
+.terraform.lock.hcl
+terraform/.terraform
+terraform/.terraform.lock.hcl
