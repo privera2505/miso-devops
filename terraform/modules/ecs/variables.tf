@@ -37,3 +37,11 @@ variable "container_port" {
 variable "ecs_service_role" {
     type = string
 }
+
+variable "environment" {
+    type = string
+}
+
+variable "project_name" {
+    type = string
+}

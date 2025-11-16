@@ -1,6 +1,12 @@
 #ECS Cluster
 resource "aws_ecs_cluster" "fargate-cluster" {
     name = var.cluster_name
+
+    setting {
+        name  = "containerInsights"
+        value = "enabled"
+    }
+
 }
 
 resource "aws_ecs_cluster_capacity_providers" "fargate_providers" {
@@ -15,12 +21,13 @@ resource "aws_ecs_cluster_capacity_providers" "fargate_providers" {
 
 #Task
 resource "aws_ecs_task_definition" "fargate_task" {
-    family                   = "app-fargate-task"
+    family                   = "${var.project_name}-${var.environment}-task"
     requires_compatibilities  = [var.compute_type_ecs]
     network_mode              = "awsvpc"
     cpu                       = 1024       
     memory                    = 3072       
     execution_role_arn        = var.iam_ecs_task
+    task_role_arn             = var.ecs_service_role
     runtime_platform {
         operating_system_family = "LINUX"
         cpu_architecture        = "X86_64"
@@ -53,12 +60,10 @@ resource "aws_ecs_task_definition" "fargate_task" {
 
 #Service
 resource "aws_ecs_service" "fargate_service" {
-    name = "fargateappservice"
+    name = "${var.project_name}-${var.environment}-service"
     cluster = aws_ecs_cluster.fargate-cluster.id
     task_definition = aws_ecs_task_definition.fargate_task.arn
     launch_type = var.compute_type_ecs
-
-    scheduling_strategy = "REPLICA"
     desired_count = 1
 
     deployment_controller {
@@ -78,6 +83,14 @@ resource "aws_ecs_service" "fargate_service" {
         target_group_arn = var.listener_80_arn
         container_name = var.container_name
         container_port = var.container_port
+    }
+
+    lifecycle {
+        ignore_changes = [ 
+            task_definition,
+            desired_count,
+            load_balancer
+        ]
     }
 
 }
