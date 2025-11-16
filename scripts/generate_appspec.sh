@@ -1,26 +1,21 @@
 #!/bin/bash
 
-set -e
-
-if [[ -z "$TASK_DEFINITION_ARN" ]]; then
+if [ -z "$TASK_DEFINITION_ARN" ]; then
   echo "❌ TASK_DEFINITION_ARN está vacío."
   exit 1
 fi
 
-if [[ -z "$CONTAINER_NAME" ]]; then
-  echo "❌ CONTAINER_NAME está vacío."
-  exit 1
-fi
+mkdir -p output
 
-cat > appspec.yml <<EOF
+cat > output/appspec.yml <<EOF
 version: 0.0
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: ${TASK_DEFINITION_ARN}
+        TaskDefinition: "$TASK_DEFINITION_ARN"
         LoadBalancerInfo:
-          ContainerName: ${CONTAINER_NAME}
+          ContainerName: "$CONTAINER_NAME"
           ContainerPort: 8000
 Hooks:
   - BeforeInstall:
