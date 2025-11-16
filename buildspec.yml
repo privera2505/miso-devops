@@ -98,23 +98,26 @@ phases:
       - echo "Creando directorio de salida..."
       - mkdir -p output
 
-      - echo "Generando appspec.yml..."
+            - echo "Generando appspec.yml..."
       - |
-          echo "version: 0.0
-          Resources:
-            - TargetService:
-                Type: AWS::ECS::Service
-                Properties:
-                  TaskDefinition: taskdef.json
-                  LoadBalancerInfo:
-                    ContainerName: $CONTAINER_NAME
-                    ContainerPort: 8000" > output/appspec.yml
+          cat > output/appspec.yml <<EOF
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: taskdef.json
+        LoadBalancerInfo:
+          ContainerName: $CONTAINER_NAME
+          ContainerPort: 8000
+EOF
 
-                - echo "Copiando archivos al directorio de artefactos..."
-                - cp taskdef.json output/taskdef.json
+      - echo "Copiando archivos al directorio de artefactos..."
+      - cp taskdef.json output/taskdef.json
 
-                - echo "Contenido del directorio output/"
-                - ls -la output/
+      - echo "Contenido del directorio output/"
+      - ls -la output/
+
 
   post_build:
     commands:
