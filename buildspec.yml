@@ -106,11 +106,15 @@ phases:
           --cli-input-json file://taskdef.json \
           --query "taskDefinition.taskDefinitionArn" \
           --output text)
-        echo "✅ Task definition ARN registrado: $TASK_DEFINITION_ARN"
+        echo "$TASK_DEFINITION_ARN" > taskdef_arn.txt
 
-        # Ejecutamos directamente el script aquí mismo
-        chmod +x scripts/generate_appspec.sh
-        ./scripts/generate_appspec.sh "$TASK_DEFINITION_ARN" "$CONTAINER_NAME"
+      - echo Leyendo ARN desde archivo...
+      - TASK_DEFINITION_ARN=$(cat taskdef_arn.txt)
+      - echo "Task definition ARN leído $TASK_DEFINITION_ARN"
+
+      - echo Ejecutando script para generar appspec.yml...
+      - chmod +x scripts/generate_appspec.sh
+      - ./scripts/generate_appspec.sh "$TASK_DEFINITION_ARN" "$CONTAINER_NAME"
 
 
       - echo Validando taskdef.json...
