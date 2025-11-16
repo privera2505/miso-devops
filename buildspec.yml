@@ -9,46 +9,46 @@ env:
 phases:
   install:
     commands:
-      - echo "📦 Instalando dependencias..."
+      - echo "Instalando dependencias..."
       - pip install -r requirements.txt
 
-      - echo "🔧 Instalando jq..."
+      - echo "Instalando jq..."
       - |
         if command -v yum &> /dev/null; then
           yum install -y jq;
         elif command -v apt-get &> /dev/null; then
           apt-get update && apt-get install -y jq;
         else
-          echo "❌ No se pudo instalar jq.";
+          echo "No se pudo instalar jq.";
           exit 1;
         fi
       - jq --version
 
   pre_build:
     commands:
-      - echo "🧪 Ejecutando pruebas unitarias..."
+      - echo "Executing unit tests..."
       - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "❌ Pruebas fallidas" && exit 1)
 
-      - echo "🔐 Iniciando sesión en ECR..."
+      - echo "Iniciando sesión en ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
 
-      - echo "🏷️ Calculando tag de la imagen..."
+      - echo "Calculando tag de la imagen..."
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
       - export IMAGE_TAG
       - echo "IMAGE_TAG=$IMAGE_TAG"
 
   build:
     commands:
-      - echo "🐳 Construyendo imagen Docker..."
+      - echo "Construyendo imagen Docker..."
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
-      - echo "🔎 Obteniendo AWS Account ID..."
+      - echo "Obteniendo AWS Account ID..."
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - EXECUTION_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
-      - echo "✅ Execution role ARN $EXECUTION_ROLE_ARN"
+      - echo "Execution role ARN $EXECUTION_ROLE_ARN"
 
-      - echo "📝 Generando taskdef.json..."
+      - echo "Generando taskdef.json..."
       - |
         cat > taskdef.json <<EOF
         {
@@ -92,35 +92,35 @@ phases:
         }
         EOF
 
-      - echo "✅ Validando taskdef.json..."
+      - echo "Validando taskdef.json..."
       - jq empty taskdef.json
 
-      - echo "📂 Creando directorio de salida..."
+      - echo "Creando directorio de salida..."
       - mkdir -p output
 
-      - echo "📝 Generando appspec.yml..."
+      - echo "Generando appspec.yml..."
       - |
         cat > output/appspec.yml <<EOF
-        version: 0.0
-        Resources:
-          - TargetService:
-              Type: AWS::ECS::Service
-              Properties:
-                TaskDefinition: taskdef.json
-                LoadBalancerInfo:
-                  ContainerName: "$CONTAINER_NAME"
-                  ContainerPort: 8000
-        EOF
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: taskdef.json
+        LoadBalancerInfo:
+          ContainerName: "$CONTAINER_NAME"
+          ContainerPort: 8000
+EOF
 
-      - echo "📄 Copiando archivos al directorio de artefactos..."
+      - echo "Copiando archivos al directorio de artefactos..."
       - cp taskdef.json output/taskdef.json
 
-      - echo "📁 Contenido del directorio output/"
+      - echo "Contenido del directorio output/"
       - ls -la output/
 
   post_build:
     commands:
-      - echo "🚀 Subiendo imagen a ECR..."
+      - echo "Subiendo imagen a ECR..."
       - docker push $ECR_REPO_URI:$IMAGE_TAG
 
 artifacts:
