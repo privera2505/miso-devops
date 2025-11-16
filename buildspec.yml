@@ -46,7 +46,7 @@ phases:
       - echo "🔎 Obteniendo AWS Account ID..."
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - EXECUTION_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
-      - echo "✅ Execution role ARN: $EXECUTION_ROLE_ARN"
+      - echo "✅ Execution role ARN $EXECUTION_ROLE_ARN"
 
       - echo "📝 Generando taskdef.json..."
       - |
