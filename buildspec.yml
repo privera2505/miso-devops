@@ -133,37 +133,8 @@ phases:
 
       - echo Creando appspec.yml correctamente formateado...
 
-      - |
-        TASK_DEF="$TASK_DEFINITION_ARN"
-        CONTAINER="$CONTAINER_NAME"
-        cat > appspec.yml <<EOF
-        version: 0.0
-        Resources:
-          - TargetService:
-              Type: AWS::ECS::Service
-              Properties:
-                TaskDefinition: ${TASK_DEF}
-                LoadBalancerInfo:
-                  ContainerName: ${CONTAINER}
-                  ContainerPort: 8000
-        Hooks:
-          - BeforeInstall:
-              location: scripts/before_install.sh
-              timeout: 300
-              runas: root
-          - Install:
-              location: scripts/install.sh
-              timeout: 300
-              runas: root
-          - AfterInstall:
-              location: scripts/after_install.sh
-              timeout: 300
-              runas: root
-          - AllowTraffic:
-              location: scripts/allow_traffic.sh
-              timeout: 300
-              runas: root
-        EOF
+      - echo "Generando appspec.yml desde script externo..."
+      - ./scripts/generate_appspec.sh
 
       - echo Validando sintaxis YAML de appspec.yml...
       - echo Mostrando appspec.yml generado
