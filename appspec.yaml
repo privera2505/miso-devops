@@ -18,7 +18,7 @@ phases:
         elif command -v apt-get &> /dev/null; then
           apt-get update && apt-get install -y jq;
         else
-          echo "No se pudo determinar el gestor de paquetes (yum/apt-get).";
+          echo "No se pudo determinar el gestor de paquetes.";
           exit 1;
         fi
       - jq --version
@@ -26,12 +26,11 @@ phases:
   pre_build:
     commands:
       - echo Ejecutando pruebas unitarias...
-      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "❌ Pruebas unitarias fallaron" && exit 1)
+      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "❌ Pruebas fallaron" && exit 1)
 
       - echo Iniciando sesión en Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
 
-      - echo Calculando IMAGE_TAG...
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
       - export IMAGE_TAG
       - echo "IMAGE_TAG=$IMAGE_TAG"
@@ -42,7 +41,6 @@ phases:
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
-      - echo Obteniendo AWS Account ID...
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - EXECUTION_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
       - echo "Execution role ARN $EXECUTION_ROLE_ARN"
@@ -70,36 +68,32 @@ phases:
                   "hostPort": 8000,
                   "protocol": "tcp"
                 }
-              ],
-              "environment": [
-                { "name": "DB_HOST", "value": "${DB_HOST}" },
-                { "name": "DB_NAME", "value": "${DB_NAME}" },
-                { "name": "DB_USER", "value": "${DB_USER}" },
-                { "name": "DB_PASSWORD", "value": "${DB_PASSWORD}" }
-              ],
-              "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                  "awslogs-group": "/ecs/$TASK_FAMILY",
-                  "awslogs-region": "$AWS_DEFAULT_REGION",
-                  "awslogs-stream-prefix": "ecs",
-                  "awslogs-create-group": "true"
-                }
-              }
+              ]
             }
           ]
         }
         EOF
 
-      - echo "Validando taskdef.json..."
       - jq empty taskdef.json
 
       - echo "Creando directorio de salida..."
       - mkdir -p output
 
-      - echo "Copiando artefactos..."
+      - echo "Generando appspec.yaml..."
+      - |
+        cat > output/appspec.yaml <<EOF
+        version: 0.0
+        Resources:
+          - TargetService:
+              Type: AWS::ECS::Service
+              Properties:
+                TaskDefinition: taskdef.json
+                LoadBalancerInfo:
+                  ContainerName: ${CONTAINER_NAME}
+                  ContainerPort: 8000
+        EOF
+
       - cp taskdef.json output/taskdef.json
-      - cp appspec.yml output/appspec.yml
 
       - echo "Contenido de output/"
       - ls -la output/
@@ -111,7 +105,7 @@ phases:
 
 artifacts:
   files:
+    - appspec.yaml
     - taskdef.json
-    - appspec.yml
   name: build_output
   base-directory: output
