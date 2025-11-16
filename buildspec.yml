@@ -134,7 +134,6 @@ phases:
       - cp appspec.yml output/appspec.yml
       - echo Verificando que los archivos fueron copiados correctamente...
       - ls -la output/
-
   post_build:
     commands:
       - echo Subiendo imagen a ECR...
