@@ -29,7 +29,7 @@ phases:
       - echo Ejecutando pruebas unitarias...
       - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "Las pruebas fallaron" && exit 1)
 
-      - echo Iniciando sesion en Amazon ECR...
+      - echo Iniciando sesión en Amazon ECR...
       - aws --version
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
 
@@ -45,7 +45,7 @@ phases:
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
-      - echo Configurando variables de entorno de la base de datos...
+      - echo Configurando variables de entorno de base de datos...
       - export DB_HOST=${DB_HOST}
       - export DB_NAME=${DB_NAME}
       - export DB_USER=${DB_USER}
@@ -55,10 +55,8 @@ phases:
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - EXECUTION_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
       - echo "Using execution role $EXECUTION_ROLE_ARN"
-      - echo "AWS Account ID $AWS_ACCOUNT_ID"
 
-
-      - echo Creando taskdef.json para ECS Fargate...
+      - echo Creando taskdef.json...
       - |
         cat > taskdef.json <<EOF
         {
@@ -83,22 +81,10 @@ phases:
                 }
               ],
               "environment": [
-                {
-                  "name": "DB_HOST",
-                  "value": "${DB_HOST}"
-                },
-                {
-                  "name": "DB_NAME",
-                  "value": "${DB_NAME}"
-                },
-                {
-                  "name": "DB_USER",
-                  "value": "${DB_USER}"
-                },
-                {
-                  "name": "DB_PASSWORD",
-                  "value": "${DB_PASSWORD}"
-                }
+                { "name": "DB_HOST", "value": "${DB_HOST}" },
+                { "name": "DB_NAME", "value": "${DB_NAME}" },
+                { "name": "DB_USER", "value": "${DB_USER}" },
+                { "name": "DB_PASSWORD", "value": "${DB_PASSWORD}" }
               ],
               "logConfiguration": {
                 "logDriver": "awslogs",
@@ -114,43 +100,31 @@ phases:
         }
         EOF
 
-      - echo Validando taskdef.json generado...
-      - cat taskdef.json
-      - echo Validando JSON syntax...
-      - echo Registrando nueva task definition en ECS...
-      - echo "Registrando nueva task definition en ECS..."
+      - echo Registrando task definition en ECS...
       - |
-        TASK_DEFINITION_ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.json --query "taskDefinition.taskDefinitionArn" --output text)
-        echo "Task definition registrada: $TASK_DEFINITION_ARN"
-        export TASK_DEFINITION_ARN
-      - echo "Task definition registrada ${TASK_DEFINITION_ARN}"
+        TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://taskdef.json \
+          --query "taskDefinition.taskDefinitionArn" \
+          --output text)
+        echo "✅ Task definition ARN registrado: $TASK_DEFINITION_ARN"
+        echo "export TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $CODEBUILD_SRC_DIR/exported_env.sh
+
+      - echo Validando taskdef.json...
       - jq empty taskdef.json
-      - echo Verificando que executionRoleArn este presente...
       - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
 
-      - echo Guardando taskdef.json para CodeDeploy...
-      - echo "CodeDeploy usara la task definition desde el artefacto"
+      - echo Creando directorio de salida...
+      - mkdir -p output
 
-      - echo Creando appspec.yml correctamente formateado...
+      - echo Cargando variable de entorno exportada...
+      - source $CODEBUILD_SRC_DIR/exported_env.sh
+      - echo "TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN"
 
-      - echo "Generando appspec.yml desde script externo..."
+      - echo Ejecutando script para generar appspec.yml...
+      - chmod +x scripts/generate_appspec.sh
       - ./scripts/generate_appspec.sh
 
-      - echo Validando sintaxis YAML de appspec.yml...
-      - echo Mostrando appspec.yml generado
-      - cat appspec.yml
-      - echo "Verificando que el YAML sea valido con jq..."
-      - jq -r . appspec.yml > /dev/null 2>&1 || echo "ADVERTENCIA jq no puede procesar YAML, continuando..."
-      - echo "Verificando estructura basica del appspec.yml..."
-      - grep -q "version:" appspec.yml && echo "✓ version field found"
-      - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
-      - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
-
-      - echo Creando directorio de salida y empaquetando artefactos...
-      - mkdir -p output
-      - cp taskdef.json output/taskdef.json
-      - cp appspec.yml output/appspec.yml
-      - echo Verificando que los archivos fueron copiados correctamente...
+      - echo Verificando archivos generados...
       - ls -la output/
 
   post_build:
