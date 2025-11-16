@@ -1,5 +1,8 @@
 #!/bin/bash
 
+TASK_DEFINITION_ARN="$1"
+CONTAINER_NAME="$2"
+
 if [ -z "$TASK_DEFINITION_ARN" ]; then
   echo "❌ TASK_DEFINITION_ARN está vacío."
   exit 1

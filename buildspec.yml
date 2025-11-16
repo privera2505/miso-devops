@@ -122,7 +122,7 @@ phases:
 
       - echo Ejecutando script para generar appspec.yml...
       - chmod +x scripts/generate_appspec.sh
-      - ./scripts/generate_appspec.sh
+      - ./scripts/generate_appspec.sh "$TASK_DEFINITION_ARN" "$CONTAINER_NAME"
 
       - echo Verificando archivos generados...
       - ls -la output/
