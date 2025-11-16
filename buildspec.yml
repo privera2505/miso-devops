@@ -100,39 +100,39 @@ phases:
         }
         EOF
 
-      - echo Registrando task definition en ECS...
-      - |
-        TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
-          --cli-input-json file://taskdef.json \
-          --query "taskDefinition.taskDefinitionArn" \
-          --output text)
-        echo "$TASK_DEFINITION_ARN" > taskdef_arn.txt
-
-      - echo Leyendo ARN desde archivo...
-      - TASK_DEFINITION_ARN=$(cat taskdef_arn.txt)
-      - echo "Task definition ARN leído $TASK_DEFINITION_ARN"
-
-      - echo Ejecutando script para generar appspec.yml...
-      - chmod +x scripts/generate_appspec.sh
-      - ./scripts/generate_appspec.sh "$TASK_DEFINITION_ARN" "$CONTAINER_NAME"
-
-
       - echo Validando taskdef.json...
       - jq empty taskdef.json
       - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
 
-      - echo Creando directorio de salida...
+      - echo Guardando taskdef.json para CodeDeploy...
+      - echo "CodeDeploy usara la task definition desde el artefacto"
+
+      - echo Creando appspec.yml para CodeDeploy ECS...
+      - |
+        {
+          echo "version: 0.0"
+          echo "Resources:"
+          echo "  - TargetService:"
+          echo "      Type: AWS::ECS::Service"
+          echo "      Properties:"
+          echo "        TaskDefinition: <TASK_DEFINITION>"
+          echo "        LoadBalancerInfo:"
+          echo "          ContainerName: ${CONTAINER_NAME}"
+          echo "          ContainerPort: 8000"
+        } > appspec.yml
+
+      - echo Validando sintaxis YAML de appspec.yml...
+      - cat appspec.yml
+      - echo "Verificando estructura basica del appspec.yml..."
+      - grep -q "version:" appspec.yml && echo "✓ version field found"
+      - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
+      - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
+
+      - echo Creando directorio de salida y empaquetando artefactos...
       - mkdir -p output
-
-      - echo Cargando variable de entorno exportada...
-      - source $CODEBUILD_SRC_DIR/exported_env.sh
-      - echo "TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN"
-
-      - echo Ejecutando script para generar appspec.yml...
-      - chmod +x scripts/generate_appspec.sh
-      - ./scripts/generate_appspec.sh "$TASK_DEFINITION_ARN" "$CONTAINER_NAME"
-
-      - echo Verificando archivos generados...
+      - cp taskdef.json output/taskdef.json
+      - cp appspec.yml output/appspec.yml
+      - echo Verificando que los archivos fueron copiados correctamente...
       - ls -la output/
 
   post_build:
