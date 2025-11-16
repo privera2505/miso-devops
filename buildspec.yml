@@ -100,7 +100,7 @@ phases:
 
       - echo "Generando appspec.yml..."
       - |
-        cat > output/appspec.yml <<EOF
+        cat <<EOF > output/appspec.yml
 version: 0.0
 Resources:
   - TargetService:
@@ -108,7 +108,7 @@ Resources:
       Properties:
         TaskDefinition: taskdef.json
         LoadBalancerInfo:
-          ContainerName: "$CONTAINER_NAME"
+          ContainerName: $CONTAINER_NAME
           ContainerPort: 8000
 EOF
 
