@@ -113,5 +113,5 @@ artifacts:
   files:
     - taskdef.json
     - appspec.json
-  name: deployment-artifacts
+  name: build_output
   base-directory: output
