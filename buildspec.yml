@@ -5,7 +5,6 @@ env:
   variables:
     CONTAINER_NAME: "appcontainer"
     TASK_FAMILY: "app-fargate-task"
-    TASK_DEFINITION_ARN: ""
 
 phases:
   install:
@@ -19,7 +18,7 @@ phases:
         elif command -v apt-get &> /dev/null; then
           apt-get update && apt-get install -y jq;
         else
-          echo "No se pudo determinar el gestor de paquetes (yum/apt-get). Instala jq manualmente.";
+          echo "No se pudo determinar el gestor de paquetes (yum/apt-get).";
           exit 1;
         fi
       - jq --version
@@ -27,17 +26,15 @@ phases:
   pre_build:
     commands:
       - echo Ejecutando pruebas unitarias...
-      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "Las pruebas fallaron" && exit 1)
+      - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "❌ Pruebas unitarias fallaron" && exit 1)
 
       - echo Iniciando sesión en Amazon ECR...
-      - aws --version
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
 
       - echo Calculando IMAGE_TAG...
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
       - export IMAGE_TAG
-      - echo IMAGE_TAG=$IMAGE_TAG
-      - echo ECR_REPO_URI=$ECR_REPO_URI
+      - echo "IMAGE_TAG=$IMAGE_TAG"
 
   build:
     commands:
@@ -45,18 +42,12 @@ phases:
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
-      - echo Configurando variables de entorno de base de datos...
-      - export DB_HOST=${DB_HOST}
-      - export DB_NAME=${DB_NAME}
-      - export DB_USER=${DB_USER}
-      - export DB_PASSWORD=${DB_PASSWORD}
-
-      - echo Obteniendo execution role ARN...
+      - echo Obteniendo AWS Account ID...
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - EXECUTION_ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"
-      - echo "Using execution role $EXECUTION_ROLE_ARN"
+      - echo "Execution role ARN: $EXECUTION_ROLE_ARN"
 
-      - echo Creando taskdef.json...
+      - echo "Creando taskdef.json..."
       - |
         cat > taskdef.json <<EOF
         {
@@ -100,40 +91,19 @@ phases:
         }
         EOF
 
-      - echo Validando taskdef.json...
+      - echo "Validando taskdef.json..."
       - jq empty taskdef.json
-      - jq -r '.executionRoleArn // "NOT_FOUND"' taskdef.json
 
-      - echo Guardando taskdef.json para CodeDeploy...
-      - echo "CodeDeploy usara la task definition desde el artefacto"
-
-      - echo Creando appspec.yml para CodeDeploy ECS...
-      - |
-        {
-          echo "version: 0.0"
-          echo "Resources:"
-          echo "  - TargetService:"
-          echo "      Type: AWS::ECS::Service"
-          echo "      Properties:"
-          echo "        TaskDefinition: <TASK_DEFINITION>"
-          echo "        LoadBalancerInfo:"
-          echo "          ContainerName: ${CONTAINER_NAME}"
-          echo "          ContainerPort: 8000"
-        } > appspec.yml
-
-      - echo Validando sintaxis YAML de appspec.yml...
-      - cat appspec.yml
-      - echo "Verificando estructura basica del appspec.yml..."
-      - grep -q "version:" appspec.yml && echo "✓ version field found"
-      - grep -q "Resources:" appspec.yml && echo "✓ Resources field found"
-      - grep -q "TargetService:" appspec.yml && echo "✓ TargetService field found"
-
-      - echo Creando directorio de salida y empaquetando artefactos...
+      - echo "Creando directorio de salida..."
       - mkdir -p output
+
+      - echo "Copiando artefactos..."
       - cp taskdef.json output/taskdef.json
-      - cp appspec.yml output/appspec.yml
-      - echo Verificando que los archivos fueron copiados correctamente...
+      - cp appspec.json output/appspec.json
+
+      - echo "Contenido de output/"
       - ls -la output/
+
   post_build:
     commands:
       - echo Subiendo imagen a ECR...
@@ -142,6 +112,6 @@ phases:
 artifacts:
   files:
     - taskdef.json
-    - appspec.yml
+    - appspec.json
   name: deployment-artifacts
   base-directory: output

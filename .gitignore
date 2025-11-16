@@ -37,3 +37,5 @@ terraform/.terraform.lock.hcl
 terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/6.21.0/darwin_arm64/terraform-provider-aws_v6.21.0_x5 .terraform/
 
 ..bfg-report
+
+Tutorial 5 – AWS Code Deploy con AWS Fargate_v2.pdf
