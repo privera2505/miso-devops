@@ -133,15 +133,15 @@ phases:
 
       - echo Creando appspec.yml con ARN real...
       - |
-        cat > appspec.yml <<EOF
+        cat <<EOF > appspec.yml
         version: 0.0
         Resources:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: ${TASK_DEFINITION_ARN}
+                TaskDefinition: "$TASK_DEFINITION_ARN"
                 LoadBalancerInfo:
-                  ContainerName: ${CONTAINER_NAME}
+                  ContainerName: "$CONTAINER_NAME"
                   ContainerPort: 8000
         Hooks:
           - BeforeInstall:
