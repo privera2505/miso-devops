@@ -131,17 +131,20 @@ phases:
       - echo Guardando taskdef.json para CodeDeploy...
       - echo "CodeDeploy usara la task definition desde el artefacto"
 
-      - echo Creando appspec.yml con ARN real...
+      - echo Creando appspec.yml correctamente formateado...
+
       - |
-        cat <<EOF > appspec.yml
+        TASK_DEF="$TASK_DEFINITION_ARN"
+        CONTAINER="$CONTAINER_NAME"
+        cat > appspec.yml <<EOF
         version: 0.0
         Resources:
           - TargetService:
               Type: AWS::ECS::Service
               Properties:
-                TaskDefinition: "$TASK_DEFINITION_ARN"
+                TaskDefinition: ${TASK_DEF}
                 LoadBalancerInfo:
-                  ContainerName: "$CONTAINER_NAME"
+                  ContainerName: ${CONTAINER}
                   ContainerPort: 8000
         Hooks:
           - BeforeInstall:
