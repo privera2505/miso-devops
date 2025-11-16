@@ -125,7 +125,7 @@ EOF
 
 artifacts:
   files:
-    - taskdef.json
     - appspec.yml
-  name: build_output
+    - taskdef.json
   base-directory: output
+  name: build_output
