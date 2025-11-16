@@ -107,7 +107,11 @@ phases:
           --query "taskDefinition.taskDefinitionArn" \
           --output text)
         echo "✅ Task definition ARN registrado: $TASK_DEFINITION_ARN"
-        echo "export TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $CODEBUILD_SRC_DIR/exported_env.sh
+
+        # Ejecutamos directamente el script aquí mismo
+        chmod +x scripts/generate_appspec.sh
+        ./scripts/generate_appspec.sh "$TASK_DEFINITION_ARN" "$CONTAINER_NAME"
+
 
       - echo Validando taskdef.json...
       - jq empty taskdef.json
