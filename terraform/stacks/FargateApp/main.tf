@@ -169,7 +169,8 @@ module "codedeploy_aws" {
     codedeploy_service_role_arn = module.iam_codedeploy.codedeploy_service_role_arn
     ecs_cluster_name = module.ecs_cluster.cluster_name
     ecs_service_name = module.ecs_cluster.service_name
-    alb_listener_arn = module.alb.alb_listener_arn
+    alb_listener_arn_prod = module.alb.listener_80_arn
+    alb_listener_arn_test = module.alb.listener_8080_arn
     blue_target_group_name = module.target_group_a.target_group_name
     green_target_group_name = module.target_group_b.target_group_name
 }

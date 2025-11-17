@@ -18,9 +18,14 @@ variable "ecs_service_name" {
   type        = string
 }
 
-variable "alb_listener_arn" {
-  description = "The ARN of the ALB listener"
+variable "alb_listener_arn_prod" {
+  description = "The ARN of the ALB listener prod"
   type        = string
+}
+
+variable "alb_listener_arn_test" {
+  description = "The ARN of the alb listener test"
+  type = string
 }
 
 variable "blue_target_group_name" {

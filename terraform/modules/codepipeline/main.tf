@@ -64,7 +64,7 @@ resource "aws_codepipeline" "docker_build_pipe" {
                 TaskDefinitionTemplateArtifact = "build_output"
                 AppSpecTemplateArtifact      = "build_output"
                 TaskDefinitionTemplatePath   = "taskdef.json"
-                AppSpecTemplatePath          = "appspec.yml"
+                AppSpecTemplatePath          = "appspec.json"
             }
         }
     }
