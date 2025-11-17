@@ -12,6 +12,10 @@ variable "owner" {
     type        = string
 }
 
+variable "environment" {
+    type = string
+}
+
 ###########################################################
 # ECR Variables
 ###########################################################
@@ -74,11 +78,6 @@ variable "s3_bucket_for_versions" {
     type    = string
 }
 
-variable "environment" {
-    description = "Ambiente del s3"
-    type = string
-}
-
 ###########################################################
 # ECS Cluster Variables
 ###########################################################
@@ -132,5 +131,14 @@ variable "source_version" {
 ###########################################################
 
 variable "pipeline_name" {
+    type = string
+}
+
+###########################################################
+# CodeDeploy Variables
+###########################################################
+
+variable "project_name" {
+    description = "Nombre del proyecto para CodeDeploy"
     type = string
 }

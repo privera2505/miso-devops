@@ -52,4 +52,24 @@ variable "db_name" {
 
 variable "db_host" {
     type = string
-} 
+}
+
+variable "container_name" {
+    type = string
+}
+
+variable "container_port" {
+    type = number
+}
+
+variable "execution_role_arn" {
+    type = string
+}
+
+variable "task_role_arn" {
+    type = string
+}
+
+variable "task_definition_arn" {
+    type = string
+}

@@ -42,7 +42,32 @@ resource "aws_codebuild_project" "docker_build" {
         environment_variable{ 
             name =  "DB_HOST"
             value = var.db_host
-        }   
+        }
+
+        environment_variable {
+            name = "CONTAINER_NAME"
+            value = var.container_name
+        }
+
+        environment_variable {
+            name = "EXECUTION_ROLE_ARN"
+            value = var.execution_role_arn
+        }
+
+        environment_variable {
+            name = "TASK_ROLE_ARN"
+            value = var.task_role_arn
+        }
+
+        environment_variable {
+            name = "CONTAINER_PORT"
+            value = var.container_port
+        }
+
+        environment_variable {
+            name = "TASK_DEF_ARN"
+            value = var.task_definition_arn
+        }
     }  
 
 
