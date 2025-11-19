@@ -145,7 +145,7 @@ module "codebuild_aws" {
     container_name = var.container_name
     container_port = var.container_port
     task_role_arn = module.iam_ecs.iam_ecs_arn
-    execution_role_arn = module.iam_ecs_servicerole.ecsservicerole_arn
+    execution_role_arn = module.iam_ecs.iam_ecs_arn
     task_definition_arn = module.ecs_cluster.task_definition_arn
 }
 
