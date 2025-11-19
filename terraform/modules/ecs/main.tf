@@ -27,7 +27,6 @@ resource "aws_ecs_task_definition" "fargate_task" {
     cpu                       = 1024       
     memory                    = 3072       
     execution_role_arn        = var.iam_ecs_task
-    task_role_arn             = var.ecs_service_role
     runtime_platform {
         operating_system_family = "LINUX"
         cpu_architecture        = "X86_64"
@@ -45,7 +44,6 @@ resource "aws_ecs_task_definition" "fargate_task" {
         portMappings = [
             {
                 containerPort = var.container_port,
-                hostPort = var.container_port,
                 protocol = "tcp"
             }
         ]
