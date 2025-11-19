@@ -35,7 +35,8 @@ resource "aws_iam_role_policy" "codedeploy_ecs_policy" {
           "autoscaling:*",
           "cloudwatch:*",
           "sns:*",
-          "s3:*"
+          "s3:*",
+          "logs:*"
         ]
         Resource = "*"
       }
