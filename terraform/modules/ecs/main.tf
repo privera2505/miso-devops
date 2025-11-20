@@ -25,8 +25,9 @@ resource "aws_ecs_task_definition" "fargate_task" {
     requires_compatibilities  = [var.compute_type_ecs]
     network_mode              = "awsvpc"
     cpu                       = 1024       
-    memory                    = 3072       
-    execution_role_arn        = var.iam_ecs_task
+    memory                    = 3072
+    execution_role_arn        = var.ecs_execution_role
+    task_role_arn             = var.iam_ecs_task  
     runtime_platform {
         operating_system_family = "LINUX"
         cpu_architecture        = "X86_64"

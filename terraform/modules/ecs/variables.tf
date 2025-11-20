@@ -34,7 +34,7 @@ variable "container_port" {
     type = number
 }
 
-variable "ecs_service_role" {
+variable "ecs_execution_role" {
     type = string
 }
 

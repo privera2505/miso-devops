@@ -64,7 +64,7 @@ module "alb" {
 # IAM ECS Module
 ###########################################################
 
-module "iam_ecs" {
+module "iam_ecs_execution_role" {
     source = "../../modules/iam_ecs"
 }
 
@@ -72,7 +72,7 @@ module "iam_ecs" {
 # IAM ECS service role Module
 ###########################################################
 
-module "iam_ecs_servicerole" {
+module "iam_ecs_task_role" {
     source = "../../modules/iam_ecs_servicerole"
 }
 
@@ -84,14 +84,14 @@ module "ecs_cluster" {
     source = "../../modules/ecs"
     cluster_name = var.cluster_name
     compute_type_ecs = var.compute_type_ecs
-    iam_ecs_task = module.iam_ecs.iam_ecs_arn
+    iam_ecs_task = module.iam_ecs_task_role.ecs_task_role_arn
     sg_id = module.alb.sg_id
     subnet_a_id = module.vpc.subnet_a_id
     subnet_b_id = module.vpc.subnet_b_id
     listener_80_arn = module.target_group_a.target_group_arn
     container_name = var.container_name
     container_port = var.container_port
-    ecs_service_role = module.iam_ecs_servicerole.ecsservicerole_arn
+    ecs_execution_role = module.iam_ecs_execution_role.iam_ecs_arn
     project_name = var.project_name
     environment = var.environment
 }
@@ -145,8 +145,8 @@ module "codebuild_aws" {
     container_name = var.container_name
     container_port = var.container_port
     task_role_arn = module.iam_ecs.iam_ecs_arn
-    execution_role_arn = module.iam_ecs.iam_ecs_arn
-    task_definition_arn = module.ecs_cluster.task_definition_arn
+    execution_role_arn = module.iam_ecs_execution_role.iam_ecs_arn
+    task_definition_arn = module.iam_ecs_task_role.ecs_task_role_arn
 }
 
 ###########################################################
