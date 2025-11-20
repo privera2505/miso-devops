@@ -1,3 +1,13 @@
+#CloudWatch Log Group
+resource "aws_cloudwatch_log_group" "app" {
+    name              = "/ecs/${var.project_name}-${var.environment}"
+    retention_in_days = 3
+
+    tags = {
+        Name = "${var.project_name}-${var.environment}-logs"
+    }
+}
+
 #ECS Cluster
 resource "aws_ecs_cluster" "fargate-cluster" {
     name = var.cluster_name
@@ -48,8 +58,20 @@ resource "aws_ecs_task_definition" "fargate_task" {
                 protocol = "tcp"
             }
         ]
+
+        logConfiguration = {
+            logDriver = "awslogs"
+            options = {
+            "awslogs-group"         = aws_cloudwatch_log_group.app.name
+            "awslogs-region"        = var.aws_region
+            "awslogs-stream-prefix" = "ecs"
+            }
+        }
+
         }
     ])
+
+    
 
     tags = {
         Name        = "app-fargate-task"

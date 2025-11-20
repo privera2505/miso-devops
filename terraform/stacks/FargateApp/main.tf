@@ -94,6 +94,7 @@ module "ecs_cluster" {
     ecs_execution_role = module.iam_ecs_execution_role.iam_ecs_arn
     project_name = var.project_name
     environment = var.environment
+    aws_region = var.aws_region
 }
 
 ###########################################################
