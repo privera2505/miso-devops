@@ -63,11 +63,6 @@ resource "aws_codebuild_project" "docker_build" {
             name = "CONTAINER_PORT"
             value = var.container_port
         }
-
-        environment_variable {
-            name = "TASK_DEF_ARN"
-            value = var.task_definition_arn
-        }
     }  
 
 

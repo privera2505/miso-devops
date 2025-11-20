@@ -69,7 +69,3 @@ variable "execution_role_arn" {
 variable "task_role_arn" {
     type = string
 }
-
-variable "task_definition_arn" {
-    type = string
-}

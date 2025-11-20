@@ -144,9 +144,8 @@ module "codebuild_aws" {
     password = var.password
     container_name = var.container_name
     container_port = var.container_port
-    task_role_arn = module.iam_ecs.iam_ecs_arn
+    task_role_arn = module.iam_ecs_task_role.ecs_task_role_arn
     execution_role_arn = module.iam_ecs_execution_role.iam_ecs_arn
-    task_definition_arn = module.iam_ecs_task_role.ecs_task_role_arn
 }
 
 ###########################################################
