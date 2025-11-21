@@ -19,6 +19,7 @@ def is_email(value: str) -> bool:
     return re.match(pattern, value) is not None
 
 # Agregar health check
+@blacklists_bp.route('/', methods=['GET'])
 @blacklists_bp.route('/ping', methods=['GET'])
 def health_check():
     return "Ok", 200
