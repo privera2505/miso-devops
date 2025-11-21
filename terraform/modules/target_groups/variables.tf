@@ -9,3 +9,7 @@ variable "vpc_id" {
 variable "container_port" {
     type = number
 }
+
+variable "health_check_path" {
+    type = string
+}

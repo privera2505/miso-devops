@@ -32,4 +32,4 @@ ENV DB_PORT=5432
 EXPOSE 8000
 
 #Arranque
-CMD ["python","-m","src.main" ]
+CMD ["python","-m","src.app" ]

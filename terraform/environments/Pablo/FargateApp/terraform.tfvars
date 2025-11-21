@@ -23,6 +23,7 @@ password = "postgres"
 ###########################################################
 target_group_name_a = "target-group-1"
 target_group_name_b = "target-group-2"
+health_check_path = "/"
 
 ###########################################################
 # ALB Variables

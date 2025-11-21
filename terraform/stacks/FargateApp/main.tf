@@ -36,6 +36,7 @@ module "target_group_a" {
     container_port = var.container_port
     vpc_id = module.vpc.vpc_id
     target_group_name = var.target_group_name_a
+    health_check_path = var.health_check_path
 }
 
 module "target_group_b" {
@@ -43,6 +44,7 @@ module "target_group_b" {
     container_port = var.container_port
     vpc_id = module.vpc.vpc_id
     target_group_name = var.target_group_name_b
+    health_check_path = var.health_check_path
 }
 
 ###########################################################
@@ -58,6 +60,9 @@ module "alb" {
     subnet_b_id = module.vpc.subnet_b_id
     tg_a = module.target_group_a.target_group_arn
     tg_b = module.target_group_b.target_group_arn
+    project_name = var.project_name
+    environment = var.environment
+    app_port = var.container_port
 }
 
 ###########################################################
@@ -85,7 +90,7 @@ module "ecs_cluster" {
     cluster_name = var.cluster_name
     compute_type_ecs = var.compute_type_ecs
     iam_ecs_task = module.iam_ecs_task_role.ecs_task_role_arn
-    sg_id = module.alb.sg_id
+    sg_id = module.alb.sg_ecs_task
     subnet_a_id = module.vpc.subnet_a_id
     subnet_b_id = module.vpc.subnet_b_id
     listener_80_arn = module.target_group_a.target_group_arn

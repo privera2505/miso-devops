@@ -6,6 +6,10 @@ output "sg_id" {
     value = aws_security_group.alb_sg.id
 }
 
+output "sg_ecs_task" {
+    value = aws_security_group.ecs_task_sg.id
+}
+
 output "listener_80_arn" {
     value = aws_lb_listener.http_80.arn
 }

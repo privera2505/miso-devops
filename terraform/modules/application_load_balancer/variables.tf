@@ -25,3 +25,15 @@ variable "tg_b" {
 variable "vpc_id" {
     type = string
 }
+
+variable "environment" {
+    type = string
+}
+
+variable "project_name" {
+    type = string
+}
+
+variable "app_port" {
+    type = number
+}

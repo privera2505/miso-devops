@@ -57,6 +57,10 @@ variable "target_group_name_b" {
     type = string
 }
 
+variable "health_check_path" {
+    type = string
+}
+
 ###########################################################
 # ALB Variables
 ###########################################################
