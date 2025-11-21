@@ -1,11 +1,5 @@
 version: 0.2
 
-env:
-  shell: bash
-  variables:
-    CONTAINER_NAME: "appcontainer"
-    TASK_FAMILY: "app-fargate-task"
-
 phases:
   install:
     commands:
@@ -15,11 +9,11 @@ phases:
   pre_build:
     commands:
       - echo "Executing unit tests..."
+      - export TESTING=true
       - pytest -v src/test/test.py --maxfail=1 --disable-warnings -q || (echo "❌ Pruebas fallidas" && exit 1)
-
+      - echo All tests passed successfully
       - echo "Iniciando sesión en ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-
       - echo "Calculando tag de la imagen..."
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
       - export IMAGE_TAG

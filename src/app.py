@@ -1,5 +1,5 @@
 from flask import Flask
-from database import db, create_database_if_not_exists
+from database import db
 from os import getenv
 from routes import blacklists_bp
 
@@ -15,6 +15,8 @@ def create_app(testing=False):
     if testing:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     else:
+        # Solo importar y ejecutar create_database si no estamos en modo testing
+        from database import create_database_if_not_exists
         create_database_if_not_exists(DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT)
         app.config['SQLALCHEMY_DATABASE_URI'] = (
             f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
@@ -31,6 +33,14 @@ def create_app(testing=False):
 
     return app
 
-if __name__ == '__main__':
+# Configuración para ejecución directa y como módulo
+# Solo crear la app si NO estamos en modo testing
+if getenv('TESTING') != 'true':
     app = create_app(testing=False)
+else:
+    app = None
+
+if __name__ == '__main__':
+    if app is None:
+        app = create_app(testing=False)
     app.run(debug=True, host='0.0.0.0', port=8000)
